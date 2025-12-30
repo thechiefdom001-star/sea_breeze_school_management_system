@@ -7,12 +7,14 @@ import { Teachers } from './components/Teachers.js';
 import { Staff } from './components/Staff.js';
 import { Marklist } from './components/Marklist.js';
 import { Assessments } from './components/Assessments.js';
+import { ResultAnalysis } from './components/ResultAnalysis.js';
 import { Fees } from './components/Fees.js';
 import { FeesRegister } from './components/FeesRegister.js';
 import { FeeReminder } from './components/FeeReminder.js';
 import { Transport } from './components/Transport.js';
 import { Library } from './components/Library.js';
 import { Payroll } from './components/Payroll.js';
+import { SeniorSchool } from './components/SeniorSchool.js';
 import { Settings } from './components/Settings.js';
 import { Sidebar } from './components/Sidebar.js';
 import { Storage } from './lib/storage.js';
@@ -82,6 +84,8 @@ const App = () => {
             case 'staff': return html`<${Staff} data=${data} setData=${setData} />`;
             case 'marklist': return html`<${Marklist} data=${data} setData=${setData} />`;
             case 'assessments': return html`<${Assessments} data=${data} setData=${setData} />`;
+            case 'senior-school': return html`<${SeniorSchool} data=${data} setData=${setData} />`;
+            case 'result-analysis': return html`<${ResultAnalysis} data=${data} onSelectStudent=${(id) => navigate('student-detail', { studentId: id })} />`;
             case 'fees': return html`<${Fees} data=${data} setData=${setData} />`;
             case 'fees-register': return html`<${FeesRegister} data=${data} />`;
             case 'fee-reminder': return html`<${FeeReminder} data=${data} />`;
@@ -192,7 +196,7 @@ const App = () => {
                                     value=${loginPassword}
                                     onInput=${e => setLoginPassword(e.target.value)}
                                 />
-                                <p class="text-[8px] text-slate-400 mt-1 italic">Tip: ask the school administrator</p>
+                                <p class="text-[8px] text-slate-400 mt-1 italic">Tip: admin / admin002</p>
                             </div>
                             <div class="flex gap-3">
                                 <button type="button" onClick=${() => setShowLoginModal(false)} class="flex-1 py-4 text-slate-500 font-bold">Cancel</button>
@@ -210,9 +214,22 @@ const StudentDetail = ({ student, data, setData, onBack }) => {
     if (!student) return html`<div>Student not found</div>`;
     
     const settings = data.settings;
-    const assessments = data.assessments.filter(a => a.studentId === student.id);
-    const totalMarks = assessments.reduce((sum, a) => sum + (Number(a.score) || 0), 0);
-    const totalPoints = assessments.reduce((sum, a) => sum + (Storage.getGradeInfo(a.score || 0).points || 0), 0);
+    const examTypes = ['Opener', 'Mid-Term', 'End-Term'];
+    const currentTerm = 'T1'; // Could be dynamic
+    const assessments = data.assessments.filter(a => a.studentId === student.id && a.term === currentTerm);
+    
+    // Calculate totals for summary cards based on subject averages
+    const subjects = Storage.getSubjectsForGrade(student.grade);
+    const subjectAverages = subjects.map(subject => {
+        const scores = examTypes.map(type => {
+            const match = assessments.find(a => a.subject === subject && a.examType === type);
+            return match ? Number(match.score) : null;
+        }).filter(s => s !== null);
+        return scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+    });
+
+    const totalMarks = subjectAverages.reduce((sum, avg) => sum + (avg || 0), 0);
+    const totalPoints = subjectAverages.reduce((sum, avg) => sum + (avg !== null ? Storage.getGradeInfo(avg).points : 0), 0);
 
     const payments = data.payments.filter(p => p.studentId === student.id);
     const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
@@ -302,55 +319,99 @@ const StudentDetail = ({ student, data, setData, onBack }) => {
                 </div>
 
                 <div class="mt-8 print:mt-6">
-                    <h3 class="font-bold text-lg mb-4 print:mb-2 print:text-sm uppercase tracking-tight">Academic Competency Tracker</h3>
-                    <div class="border rounded-xl overflow-hidden print:border-black print:rounded-none">
+                    <h3 class="font-bold text-lg mb-4 print:mb-2 print:text-sm uppercase tracking-tight">Academic Competency Tracker - ${currentTerm}</h3>
+                    <div class="border rounded-xl overflow-hidden print:border-black print:rounded-none overflow-x-auto no-scrollbar">
                         <table class="w-full text-left">
                             <thead class="bg-slate-50 print:bg-white border-b print:border-b-2 print:border-black">
-                                <tr>
-                                    <th class="p-4 text-xs font-bold uppercase">Learning Area</th>
-                                    <th class="p-4 text-xs font-bold uppercase text-center">Score (%)</th>
-                                    <th class="p-4 text-xs font-bold uppercase text-center">Points</th>
-                                    <th class="p-4 text-xs font-bold uppercase text-center">Performance Level</th>
+                                <tr class="text-[10px] uppercase font-black text-slate-500">
+                                    <th class="p-4">Learning Area</th>
+                                    <th class="p-4 text-center border-l">Opener</th>
+                                    <th class="p-4 text-center border-l">Mid</th>
+                                    <th class="p-4 text-center border-l">End</th>
+                                    <th class="p-4 text-center border-l bg-blue-50 text-blue-700">Average</th>
+                                    <th class="p-4 text-center border-l">Level</th>
+                                    <th class="p-4 text-center border-l font-black">Pts</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y print:divide-black">
                                 ${Storage.getSubjectsForGrade(student.grade).map(subject => {
-                                    const assessment = assessments.find(a => a.subject === subject);
-                                    const mark = assessment?.score || '-';
-                                    const gradeInfo = assessment ? Storage.getGradeInfo(assessment.score) : null;
-                                    const levelCode = assessment?.level || 'N/A';
-                                    const points = assessment ? gradeInfo.points : '-';
+                                    const scores = {};
+                                    examTypes.forEach(type => {
+                                        const match = assessments.find(a => a.subject === subject && a.examType === type);
+                                        scores[type] = match ? Number(match.score) : null;
+                                    });
+
+                                    const validScores = Object.values(scores).filter(s => s !== null);
+                                    const average = validScores.length > 0 
+                                        ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length)
+                                        : null;
+                                    
+                                    const gradeInfo = average !== null ? Storage.getGradeInfo(average) : null;
                                     
                                     return html`
-                                        <tr class="print:break-inside-avoid">
-                                            <td class="p-4 font-medium print:text-sm">
+                                        <tr class="print:break-inside-avoid hover:bg-slate-50">
+                                            <td class="p-4 font-bold text-slate-800 print:text-sm">
                                                 ${subject}
-                                                ${assessment && html`<p class="text-[9px] text-slate-400 font-normal hidden print:block">${gradeInfo.desc}</p>`}
                                             </td>
-                                            <td class="p-4 text-center font-bold text-slate-700 print:text-sm">
-                                                ${mark}
+                                            <td class="p-4 text-center text-slate-500 border-l font-medium print:text-sm">${scores['Opener'] ?? '-'}</td>
+                                            <td class="p-4 text-center text-slate-500 border-l font-medium print:text-sm">${scores['Mid-Term'] ?? '-'}</td>
+                                            <td class="p-4 text-center text-slate-500 border-l font-medium print:text-sm">${scores['End-Term'] ?? '-'}</td>
+                                            <td class="p-4 text-center font-black text-blue-600 border-l bg-blue-50/30 print:text-sm">${average !== null ? average + '%' : '-'}</td>
+                                            <td class="p-4 text-center border-l">
+                                                <span class=${`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                                                    gradeInfo && gradeInfo.level !== '-' ? (
+                                                        gradeInfo.level.startsWith('EE') ? 'bg-green-100 text-green-700' :
+                                                        gradeInfo.level.startsWith('ME') ? 'bg-blue-100 text-blue-700' :
+                                                        gradeInfo.level.startsWith('AE') ? 'bg-yellow-100 text-yellow-700' :
+                                                        'bg-red-100 text-red-700'
+                                                    ) : 'text-slate-300'
+                                                }`}>
+                                                    ${gradeInfo ? gradeInfo.level : '-'}
+                                                </span>
                                             </td>
-                                            <td class="p-4 text-center font-bold text-blue-600 print:text-sm print:text-black">
-                                                ${points}
-                                            </td>
-                                            <td class="p-4 text-center">
-                                                <div class="flex flex-col items-center gap-1">
-                                                    <span class=${`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
-                                                        levelCode.startsWith('EE') ? 'bg-green-100 text-green-700 print:text-black print:bg-white print:border print:border-black' :
-                                                        levelCode.startsWith('ME') ? 'bg-blue-100 text-blue-700 print:text-black print:bg-white print:border print:border-black' :
-                                                        levelCode.startsWith('AE') ? 'bg-yellow-100 text-yellow-700 print:text-black print:bg-white print:border print:border-black' :
-                                                        levelCode.startsWith('BE') ? 'bg-red-100 text-red-700 print:text-black print:bg-white print:border print:border-black' :
-                                                        'bg-slate-100 text-slate-500 print:text-slate-300 print:bg-white'
-                                                    }`}>
-                                                        ${levelCode}
-                                                    </span>
-                                                    ${assessment && html`<span class="text-[8px] font-bold text-slate-500 uppercase">${gradeInfo.label}</span>`}
-                                                </div>
+                                            <td class="p-4 text-center border-l font-black text-slate-700 print:text-sm">
+                                                ${gradeInfo ? gradeInfo.points : '-'}
                                             </td>
                                         </tr>
                                     `;
                                 })}
                             </tbody>
+                            <tfoot class="bg-slate-50 border-t-2 border-slate-200 font-bold text-slate-900">
+                                <tr>
+                                    <td class="p-4 uppercase text-[10px]">Learning Area Totals</td>
+                                    ${['Opener', 'Mid-Term', 'End-Term'].map(type => {
+                                        const sum = assessments.filter(a => a.examType === type).reduce((a, b) => a + Number(b.score), 0);
+                                        return html`<td class="p-4 text-center border-l text-xs">${sum || '-'}</td>`;
+                                    })}
+                                    <td class="p-4 text-center border-l bg-blue-50/50 text-blue-700 text-xs">
+                                        ${Math.round(Storage.getSubjectsForGrade(student.grade).reduce((sum, subject) => {
+                                            const subScores = assessments.filter(a => a.subject === subject).map(a => Number(a.score));
+                                            return sum + (subScores.length > 0 ? subScores.reduce((a,b)=>a+b,0)/subScores.length : 0);
+                                        }, 0)) || '-'}
+                                    </td>
+                                    <td class="p-4 text-center border-l font-black text-blue-700">${totalPoints}</td>
+                                </tr>
+                                <tr class="bg-white">
+                                    <td class="p-4 uppercase text-[10px] text-blue-600 font-black">Mean Score Average</td>
+                                    ${['Opener', 'Mid-Term', 'End-Term'].map(type => {
+                                        const typeAssessments = assessments.filter(a => a.examType === type);
+                                        const count = Storage.getSubjectsForGrade(student.grade).length;
+                                        const avg = typeAssessments.length > 0 ? Math.round(typeAssessments.reduce((a, b) => a + Number(b.score), 0) / count) : 0;
+                                        return html`<td class="p-4 text-center border-l text-blue-600 font-black text-xs">${avg ? avg + '%' : '-'}</td>`;
+                                    })}
+                                    <td class="p-4 text-center border-l bg-blue-600 text-white text-xs font-black">
+                                        ${(() => {
+                                            const subs = Storage.getSubjectsForGrade(student.grade);
+                                            const totalAvg = subs.reduce((sum, subject) => {
+                                                const subScores = assessments.filter(a => a.subject === subject).map(a => Number(a.score));
+                                                return sum + (subScores.length > 0 ? Math.round(subScores.reduce((a,b)=>a+b,0)/subScores.length) : 0);
+                                            }, 0);
+                                            return Math.round(totalAvg / subs.length) + '%';
+                                        })()}
+                                    </td>
+                                    <td class="border-l"></td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                 </div>

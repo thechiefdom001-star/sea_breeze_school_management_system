@@ -7,13 +7,14 @@ const html = htm.bind(h);
 export const Students = ({ data, setData, onSelectStudent }) => {
     const [showAdd, setShowAdd] = useState(false);
     const [filterGrade, setFilterGrade] = useState('ALL');
+    const [filterFinance, setFilterFinance] = useState('ALL');
     const feeOptions = [
         { key: 'admission', label: 'Admission' }, { key: 'diary', label: 'Diary' }, { key: 'development', label: 'Development' },
         { key: 't1', label: 'Term 1' }, { key: 't2', label: 'Term 2' }, { key: 't3', label: 'Term 3' },
         { key: 'boarding', label: 'Boarding' }, { key: 'breakfast', label: 'Breakfast' }, { key: 'lunch', label: 'Lunch' }, 
         { key: 'trip', label: 'Trip' }, { key: 'bookFund', label: 'Books' }, { key: 'caution', label: 'Caution' }, 
         { key: 'uniform', label: 'Uniform' }, { key: 'studentCard', label: 'ID Card' }, { key: 'remedial', label: 'Remedials' },
-        { key: 'assessmentFee', label: 'Assessment Fee' }, { key: 'projectFee', label: 'Project Fee' }
+        { key: 'assessmentFee', label: 'Exam Fee' }, { key: 'projectFee', label: 'Project Fee' }
     ];
 
     const [editingId, setEditingId] = useState(null);
@@ -23,8 +24,8 @@ export const Students = ({ data, setData, onSelectStudent }) => {
         admissionNo: '',
         assessmentNo: '',
         upiNo: '',
+        parentContact: '',
         stream: '',
-        parentsContact: '',
         previousArrears: 0,
         selectedFees: ['t1', 't2', 't3', 'admission', 'diary', 'development'] 
     });
@@ -50,8 +51,8 @@ export const Students = ({ data, setData, onSelectStudent }) => {
             admissionNo: '',
             assessmentNo: '',
             upiNo: '',
+            parentContact: '',
             stream: '',
-            parentsContact: '',
             previousArrears: 0,
             selectedFees: ['t1', 't2', 't3', 'admission', 'diary', 'development']
         });
@@ -78,9 +79,23 @@ export const Students = ({ data, setData, onSelectStudent }) => {
         setNewStudent({ ...newStudent, selectedFees: updated });
     };
 
-    const filteredStudents = filterGrade === 'ALL' 
-        ? (data.students || []) 
-        : (data.students || []).filter(s => s.grade === filterGrade);
+    const filteredStudents = (data.students || []).filter(s => {
+        const matchesGrade = filterGrade === 'ALL' || s.grade === filterGrade;
+        
+        if (filterFinance === 'ALL') return matchesGrade;
+
+        const feeStructure = data.settings.feeStructures?.find(f => f.grade === s.grade);
+        const selectedKeys = s.selectedFees || ['t1', 't2', 't3'];
+        const totalDue = (Number(s.previousArrears) || 0) + (feeStructure ? selectedKeys.reduce((sum, key) => sum + (feeStructure[key] || 0), 0) : 0);
+        const totalPaid = (data.payments || []).filter(p => p.studentId === s.id).reduce((sum, p) => sum + Number(p.amount), 0);
+        const balance = totalDue - totalPaid;
+
+        if (filterFinance === 'FULL') return matchesGrade && balance <= 0 && totalDue > 0;
+        if (filterFinance === 'HALF') return matchesGrade && totalPaid >= (totalDue / 2) && balance > 0;
+        if (filterFinance === 'ARREARS') return matchesGrade && balance > 0;
+        
+        return matchesGrade;
+    });
 
     return html`
         <div class="space-y-6">
@@ -97,6 +112,16 @@ export const Students = ({ data, setData, onSelectStudent }) => {
                     >
                         <option value="ALL">All Grades</option>
                         ${data.settings.grades.map(g => html`<option value=${g}>${g}</option>`)}
+                    </select>
+                    <select 
+                        class="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500"
+                        value=${filterFinance}
+                        onChange=${(e) => setFilterFinance(e.target.value)}
+                    >
+                        <option value="ALL">All Payments</option>
+                        <option value="FULL">Full Fees Paid</option>
+                        <option value="HALF">Half Fees Paid+</option>
+                        <option value="ARREARS">With Arrears</option>
                     </select>
                     <button onClick=${() => window.print()} class="bg-slate-100 text-slate-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-200">Print List</button>
                     <button 
@@ -176,12 +201,12 @@ export const Students = ({ data, setData, onSelectStudent }) => {
                             />
                         </div>
                         <div class="space-y-1">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Parent's Contact</label>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Parent Contact</label>
                             <input 
-                                placeholder="e.g. 0712 345 678" 
+                                placeholder="e.g. 0712345678" 
                                 class="w-full p-3 bg-slate-50 rounded-lg border-0 focus:ring-2 focus:ring-blue-500 outline-none"
-                                value=${newStudent.parentsContact}
-                                onInput=${(e) => setNewStudent({...newStudent, parentsContact: e.target.value})}
+                                value=${newStudent.parentContact}
+                                onInput=${(e) => setNewStudent({...newStudent, parentContact: e.target.value})}
                             />
                         </div>
                         <div class="space-y-1">
@@ -221,14 +246,14 @@ export const Students = ({ data, setData, onSelectStudent }) => {
                 </form>
             `}
 
-            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                <table class="w-full text-left">
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-x-auto no-scrollbar">
+                <table class="w-full text-left min-w-[800px]">
                     <thead class="bg-slate-50 border-b border-slate-100">
                         <tr>
                             <th class="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase">Name</th>
                             <th class="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase">Adm No</th>
-                            <th class="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase">Stream</th>
-                            <th class="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase hidden md:table-cell">UPI / ASN</th>
+                            <th class="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase">UPI No</th>
+                            <th class="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase">Assess No</th>
                             <th class="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase">Parent Contact</th>
                             <th class="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase">Grade</th>
                             <th class="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase no-print">Action</th>
@@ -236,23 +261,24 @@ export const Students = ({ data, setData, onSelectStudent }) => {
                     </thead>
                     <tbody class="divide-y divide-slate-50">
                         ${filteredStudents.map(student => html`
-                            <tr key=${student.id} class="even:bg-slate-50/50 hover:bg-blue-50/50 transition-colors">
+                            <tr key=${student.id} class="hover:bg-slate-100 transition-colors even:bg-slate-50">
                                 <td class="px-6 py-4">
                                     <div class="font-bold text-sm">${student.name}</div>
+                                    <div class="text-[9px] text-slate-400 uppercase">${student.stream || 'No Stream'}</div>
                                 </td>
                                 <td class="px-6 py-4 text-slate-500 text-sm font-mono">${student.admissionNo}</td>
+                                <td class="px-6 py-4 text-slate-500 text-xs font-mono">${student.upiNo || '-'}</td>
+                                <td class="px-6 py-4 text-slate-500 text-xs font-mono">${student.assessmentNo || '-'}</td>
+                                <td class="px-6 py-4 text-slate-700 text-xs font-bold">${student.parentContact || '-'}</td>
                                 <td class="px-6 py-4">
-                                    <div class="text-[10px] text-slate-400 uppercase font-bold">${student.stream || '-'}</div>
-                                </td>
-                                <td class="px-6 py-4 hidden md:table-cell">
-                                    <div class="text-[10px] text-slate-500">ASN: ${student.assessmentNo || '-'}</div>
-                                    <div class="text-[10px] text-slate-500">UPI: ${student.upiNo || '-'}</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-xs font-medium text-slate-600">${student.parentsContact || 'Not Set'}</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="bg-slate-100 px-2 py-1 rounded text-[10px] font-bold uppercase whitespace-nowrap">${student.grade}</span>
+                                    <div class="flex flex-col gap-1">
+                                        <span class="bg-slate-200 px-2 py-1 rounded text-[10px] font-bold uppercase whitespace-nowrap">${student.grade}</span>
+                                        ${['GRADE 10', 'GRADE 11', 'GRADE 12'].includes(student.grade) && html`
+                                            <span class="text-[8px] font-black text-blue-600 uppercase tracking-tighter">
+                                                ${student.seniorPathway ? student.seniorPathway.replace(/([A-Z])/g, ' $1') : 'No Pathway'}
+                                            </span>
+                                        `}
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 no-print">
                                     <div class="flex items-center gap-3">

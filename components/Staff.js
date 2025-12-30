@@ -114,8 +114,8 @@ export const Staff = ({ data, setData }) => {
                 </form>
             `}
 
-            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                <table class="w-full text-left">
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-x-auto no-scrollbar">
+                <table class="w-full text-left min-w-[600px]">
                     <thead class="bg-slate-50 border-b border-slate-100">
                         <tr>
                             <th class="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase">Staff Name</th>
@@ -126,7 +126,7 @@ export const Staff = ({ data, setData }) => {
                     </thead>
                     <tbody class="divide-y divide-slate-50">
                         ${staffList.map(s => html`
-                            <tr key=${s.id} class="even:bg-slate-50/50 hover:bg-blue-50/50 transition-colors">
+                            <tr key=${s.id} class="hover:bg-slate-100 transition-colors even:bg-slate-50">
                                 <td class="px-6 py-4">
                                     <div class="font-bold text-sm">${s.name}</div>
                                     <div class="text-[10px] text-slate-400 uppercase font-medium">ID: ${s.id}</div>

@@ -165,8 +165,8 @@ export const Transport = ({ data, setData }) => {
                 </div>
             </div>
 
-            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                <table class="w-full text-left">
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-x-auto no-scrollbar">
+                <table class="w-full text-left min-w-[600px]">
                     <thead class="bg-slate-50 border-b">
                         <tr>
                             <th class="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase">Student</th>
@@ -180,7 +180,7 @@ export const Transport = ({ data, setData }) => {
                             const student = data.students.find(s => s.id === a.studentId);
                             const route = transport.routes.find(r => r.id === a.routeId);
                             return html`
-                                <tr class="even:bg-slate-50/50 hover:bg-blue-50/50 transition-colors">
+                                <tr class="hover:bg-slate-100 even:bg-slate-50">
                                     <td class="px-6 py-4 font-medium text-sm">${student?.name || 'Unknown'}</td>
                                     <td class="px-6 py-4 text-slate-600 text-sm">${route?.name || 'None'}</td>
                                     <td class="px-6 py-4 font-bold text-sm">${data.settings.currency} ${route?.fee || 0}</td>

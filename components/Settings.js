@@ -6,6 +6,16 @@ const html = htm.bind(h);
 
 export const Settings = ({ data, setData }) => {
     const [updating, setUpdating] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false);
+    const [pendingImportData, setPendingImportData] = useState(null);
+    const [importSelections, setImportSelections] = useState({
+        students: true,
+        marks: true,
+        staff: true,
+        finance: true,
+        settings: true,
+        modules: true
+    });
     
     const updateFee = (grade, field, val) => {
         const newStructures = data.settings.feeStructures.map(f => 
@@ -54,7 +64,7 @@ export const Settings = ({ data, setData }) => {
         { key: 'uniform', label: 'Uniform' },
         { key: 'studentCard', label: 'Card' },
         { key: 'remedial', label: 'Remed' },
-        { key: 'assessmentFee', label: 'Assess' },
+        { key: 'assessmentFee', label: 'Exam' },
         { key: 'projectFee', label: 'Project' }
     ];
 
@@ -70,22 +80,59 @@ export const Settings = ({ data, setData }) => {
         document.body.removeChild(link);
     };
 
-    const handleImport = (e) => {
+    const handleImportFile = (e) => {
         const file = e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (event) => {
             try {
                 const importedData = JSON.parse(event.target.result);
-                if (confirm('Importing data will overwrite your current records. Continue?')) {
-                    setData(importedData);
-                    alert('Data imported successfully!');
-                }
+                setPendingImportData(importedData);
+                setShowImportModal(true);
             } catch (err) {
                 alert('Invalid backup file.');
             }
         };
         reader.readAsText(file);
+        e.target.value = ''; // Reset input
+    };
+
+    const processImport = () => {
+        if (!pendingImportData) return;
+
+        let newData = { ...data };
+
+        if (importSelections.students) {
+            newData.students = pendingImportData.students || [];
+        }
+        if (importSelections.marks) {
+            newData.assessments = pendingImportData.assessments || [];
+            newData.remarks = pendingImportData.remarks || [];
+        }
+        if (importSelections.staff) {
+            newData.teachers = pendingImportData.teachers || [];
+            newData.staff = pendingImportData.staff || [];
+        }
+        if (importSelections.finance) {
+            newData.payments = pendingImportData.payments || [];
+            newData.payroll = pendingImportData.payroll || [];
+        }
+        if (importSelections.settings) {
+            newData.settings = { 
+                ...pendingImportData.settings,
+                // Keep logo if not provided in import
+                schoolLogo: pendingImportData.settings?.schoolLogo || data.settings.schoolLogo
+            };
+        }
+        if (importSelections.modules) {
+            newData.transport = pendingImportData.transport || { routes: [], assignments: [] };
+            newData.library = pendingImportData.library || { books: [], transactions: [] };
+        }
+
+        setData(newData);
+        setShowImportModal(false);
+        setPendingImportData(null);
+        alert('Selected data has been imported successfully!');
     };
 
     return html`
@@ -172,7 +219,7 @@ export const Settings = ({ data, setData }) => {
                                 <input 
                                     type="file" 
                                     accept=".json" 
-                                    onChange=${handleImport}
+                                    onChange=${handleImportFile}
                                     class="block w-full text-[10px] text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
                                 />
                             </label>
@@ -237,6 +284,47 @@ export const Settings = ({ data, setData }) => {
                         </table>
                     </div>
                 </div>
+
+                <!-- Selective Import Modal -->
+                ${showImportModal && html`
+                    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                        <div class="bg-white w-full max-w-md rounded-3xl p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+                            <h3 class="text-2xl font-black mb-2">Selective Import</h3>
+                            <p class="text-slate-400 text-sm mb-6">Choose which data categories to override. Deselected categories will keep your current data.</p>
+                            
+                            <div class="grid grid-cols-1 gap-3 mb-8">
+                                ${[
+                                    { id: 'students', label: 'Students Directory', icon: '👥' },
+                                    { id: 'marks', label: 'Marks & Assessments', icon: '📝' },
+                                    { id: 'staff', label: 'Teachers & Staff', icon: '👨‍🏫' },
+                                    { id: 'finance', label: 'Financial Records', icon: '💰' },
+                                    { id: 'settings', label: 'System Settings & Fees', icon: '⚙️' },
+                                    { id: 'modules', label: 'Transport & Library', icon: '🚌' }
+                                ].map(cat => html`
+                                    <label class=${`flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                                        importSelections[cat.id] ? 'border-primary bg-blue-50/50' : 'border-slate-100 hover:border-slate-200'
+                                    }`}>
+                                        <div class="flex items-center gap-3">
+                                            <span class="text-xl">${cat.icon}</span>
+                                            <span class="font-bold text-sm text-slate-700">${cat.label}</span>
+                                        </div>
+                                        <input 
+                                            type="checkbox" 
+                                            class="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary"
+                                            checked=${importSelections[cat.id]}
+                                            onChange=${() => setImportSelections({...importSelections, [cat.id]: !importSelections[cat.id]})}
+                                        />
+                                    </label>
+                                `)}
+                            </div>
+
+                            <div class="flex gap-3">
+                                <button onClick=${() => { setShowImportModal(false); setPendingImportData(null); }} class="flex-1 py-4 text-slate-500 font-bold">Cancel</button>
+                                <button onClick=${processImport} class="flex-1 py-4 bg-primary text-white rounded-2xl font-black shadow-lg shadow-blue-200">Import Selected</button>
+                            </div>
+                        </div>
+                    </div>
+                `}
 
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                     <h3 class="font-bold mb-6">School Profile</h3>

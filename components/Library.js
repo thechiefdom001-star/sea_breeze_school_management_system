@@ -221,8 +221,8 @@ export const Library = ({ data, setData }) => {
                         </form>
                     `}
 
-                    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                        <table class="w-full text-left">
+                    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-x-auto no-scrollbar">
+                        <table class="w-full text-left min-w-[700px]">
                             <thead class="bg-slate-50 border-b">
                                 <tr>
                                     <th class="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase">Book Details</th>
@@ -234,7 +234,7 @@ export const Library = ({ data, setData }) => {
                             </thead>
                             <tbody class="divide-y divide-slate-50">
                                 ${library.books.map(book => html`
-                                    <tr key=${book.id} class="even:bg-slate-50/50 hover:bg-blue-50/50 transition-colors">
+                                    <tr key=${book.id} class="hover:bg-slate-100 even:bg-slate-50">
                                         <td class="px-6 py-4">
                                             <div class="font-bold text-sm">${book.title}</div>
                                             <div class="text-[10px] text-slate-400 uppercase">By ${book.author}</div>
@@ -308,8 +308,8 @@ export const Library = ({ data, setData }) => {
                         </form>
                     </div>
 
-                    <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                        <table class="w-full text-left">
+                    <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-x-auto no-scrollbar">
+                        <table class="w-full text-left min-w-[600px]">
                             <thead class="bg-slate-50 border-b">
                                 <tr>
                                     <th class="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase">Borrower / Book</th>
@@ -323,7 +323,7 @@ export const Library = ({ data, setData }) => {
                                     const book = library.books.find(b => b.id === t.bookId);
                                     const student = students.find(s => s.id === t.studentId);
                                     return html`
-                                        <tr key=${t.id} class="even:bg-slate-50/50 hover:bg-blue-50/50 transition-colors text-sm">
+                                        <tr key=${t.id} class="hover:bg-slate-50 text-sm">
                                             <td class="px-6 py-4">
                                                 <div class="font-bold">${student?.name || 'Unknown'}</div>
                                                 <div class="text-[10px] text-slate-400">${book?.title || 'Unknown Book'}</div>

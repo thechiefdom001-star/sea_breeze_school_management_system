@@ -71,8 +71,8 @@ export const Payroll = ({ data, setData }) => {
                 </div>
             </div>
 
-            <div class=${`bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden ${activePayslip ? 'no-print' : ''}`}>
-                <table class="w-full text-left text-xs md:text-sm">
+            <div class=${`bg-white rounded-2xl border border-slate-100 shadow-sm overflow-x-auto no-scrollbar ${activePayslip ? 'no-print' : ''}`}>
+                <table class="w-full text-left text-xs md:text-sm min-w-[900px]">
                     <thead class="bg-slate-50 border-b text-[10px] font-bold text-slate-500 uppercase">
                         <tr>
                             <th class="px-4 py-4">Employee</th>
@@ -91,7 +91,7 @@ export const Payroll = ({ data, setData }) => {
                             const totalStatutory = (entry?.nssf || 0) + (entry?.shif || 0) + (entry?.ahl || 0);
                             
                             return html`
-                                <tr key=${staff.id} class="even:bg-slate-50/50 hover:bg-blue-50/50 transition-colors">
+                                <tr key=${staff.id} class="hover:bg-slate-100 transition-colors even:bg-slate-50">
                                     <td class="px-4 py-4">
                                         <div class="font-bold">${staff.name}</div>
                                         <div class="text-[10px] text-slate-400 uppercase">${staff.role || staff.subjects || 'Staff'}</div>

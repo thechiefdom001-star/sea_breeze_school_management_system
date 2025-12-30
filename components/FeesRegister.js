@@ -129,9 +129,8 @@ export const FeesRegister = ({ data }) => {
                 <p class="text-[10px] text-slate-400 mt-1">Status: ${showOnlyArrears ? 'Outstanding Balances Only' : 'All Students'}</p>
             </div>
 
-            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-x-auto no-scrollbar">
+                <table class="w-full text-left min-w-[800px]">
                         <thead class="bg-slate-50 border-b text-[10px] font-bold text-slate-500 uppercase">
                             <tr>
                                 <th class="px-6 py-4">Student Name</th>
@@ -144,7 +143,7 @@ export const FeesRegister = ({ data }) => {
                         </thead>
                         <tbody class="divide-y divide-slate-50">
                             ${filteredData.map(s => html`
-                                <tr key=${s.id} class="even:bg-slate-50/50 hover:bg-blue-50/50 transition-colors">
+                                <tr key=${s.id} class="hover:bg-slate-100 transition-colors even:bg-slate-50">
                                     <td class="px-6 py-4">
                                         <div class="font-bold text-sm">${s.name}</div>
                                         <div class="text-[10px] text-slate-400">${s.stream || 'No Stream'}</div>
@@ -177,7 +176,6 @@ export const FeesRegister = ({ data }) => {
                             </tfoot>
                         `}
                     </table>
-                </div>
             </div>
         </div>
     `;

@@ -29,17 +29,17 @@ export const FeeReminder = ({ data }) => {
         { key: 'uniform', label: 'Uniform' },
         { key: 'studentCard', label: 'ID Card' },
         { key: 'remedial', label: 'Remedials' },
-        { key: 'assessmentFee', label: 'Assessment Fee' },
+        { key: 'assessmentFee', label: 'Exam Fee' },
         { key: 'projectFee', label: 'Project Fee' }
     ];
 
-    const calculateArrears = (student, termFilter = 'ALL') => {
+    const calculateArrears = (student) => {
         const feeStructure = settings.feeStructures?.find(f => f.grade === student.grade);
         if (!feeStructure) return { items: [], totalDue: 0, totalPaid: 0, balance: 0 };
 
         const selectedKeys = student.selectedFees || ['t1', 't2', 't3'];
         
-        const allItems = feeColumns
+        const itemized = feeColumns
             .filter(col => selectedKeys.includes(col.key))
             .map(col => {
                 const due = Number(feeStructure[col.key]) || 0;
@@ -52,7 +52,7 @@ export const FeeReminder = ({ data }) => {
             .filter(item => item.due > 0 || item.paid > 0);
 
         if (Number(student.previousArrears) > 0) {
-            allItems.unshift({ 
+            itemized.unshift({ 
                 label: 'Arrears Brought Forward', 
                 due: Number(student.previousArrears), 
                 paid: 0, 
@@ -61,31 +61,21 @@ export const FeeReminder = ({ data }) => {
             });
         }
 
-        // Apply term filtering to the item list
-        const filteredItems = allItems.filter(item => {
-            if (termFilter === 'ALL') return true;
-            const termKey = termFilter.toLowerCase();
-            // Show item if it's Arrears, not a tuition term (shared/annual), or specifically the selected term
-            return item.key === 'prev' || !['t1', 't2', 't3'].includes(item.key) || item.key === termKey;
-        });
-
-        const totalDue = filteredItems.reduce((sum, i) => sum + i.due, 0);
-        const totalPaid = filteredItems.reduce((sum, i) => sum + i.paid, 0);
-        const balance = filteredItems.reduce((sum, i) => sum + i.balance, 0);
+        const totalDue = itemized.reduce((sum, i) => sum + i.due, 0);
+        const totalPaid = payments.filter(p => p.studentId === student.id).reduce((sum, p) => sum + Number(p.amount), 0);
         
         return {
-            items: filteredItems,
+            items: itemized,
             totalDue,
             totalPaid,
-            balance
+            balance: totalDue - totalPaid
         };
     };
 
     const filteredStudents = students.filter(s => {
         const matchGrade = filterGrade === 'ALL' || s.grade === filterGrade;
         const matchStudent = selectedStudentId === 'ALL' || s.id === selectedStudentId;
-        // Check if student has balance in the context of the selected term or overall
-        const finance = calculateArrears(s, selectedTerm);
+        const finance = calculateArrears(s);
         return matchGrade && matchStudent && finance.balance > 0;
     });
 
@@ -145,39 +135,60 @@ export const FeeReminder = ({ data }) => {
                 <style>
                     @media print {
                         .reminder-card {
-                            min-height: 13.8cm; /* Ensures roughly 2 per A4 page */
-                            padding: 1cm !important;
-                            border-bottom: 1px dashed #ccc !important;
+                            height: 14.8cm;
+                            width: 100% !important;
+                            padding: 1.5cm !important;
+                            border-bottom: 1px dashed #000 !important;
                             page-break-inside: avoid;
                             display: flex;
                             flex-direction: column;
+                            justify-content: flex-start;
+                            box-sizing: border-box;
+                            overflow: hidden;
                         }
                         .reminder-card:nth-child(2n) {
                             border-bottom: none !important;
+                            page-break-after: always;
                         }
-                        /* Ensure the whole document is visible */
-                        body, .h-screen, #app { height: auto !important; overflow: visible !important; }
+                        .reminder-card * {
+                            font-size: 11pt !important;
+                        }
+                        .reminder-card h1 { font-size: 18pt !important; }
+                        .reminder-card .text-xl { font-size: 14pt !important; }
+                        .reminder-card .text-xs { font-size: 9pt !important; }
+                        .reminder-card .text-[10px] { font-size: 8pt !important; }
+                        .reminder-card .text-[9px] { font-size: 7pt !important; }
                     }
                 </style>
                 ${filteredStudents.map(student => {
-                    const finance = calculateArrears(student, selectedTerm);
+                    const finance = calculateArrears(student);
                     return html`
                         <div class="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm print:shadow-none print:border-0 print:p-0 print:mb-0 page-break reminder-card">
                             <!-- Header -->
-                            <div class="flex flex-col items-center text-center border-b-2 border-slate-900 pb-4 mb-4">
-                                <img src="${settings.schoolLogo}" class="w-20 h-20 mb-2 object-contain" />
-                                <h1 class="text-2xl font-black uppercase">${settings.schoolName}</h1>
-                                <p class="text-[10px] font-bold text-slate-500">${settings.schoolAddress}</p>
-                                <div class="mt-4 bg-slate-900 text-white px-4 py-1 rounded text-[10px] font-black uppercase tracking-widest">
-                                    Fee Balance Reminder ${selectedTerm !== 'ALL' ? `- ${selectedTerm}` : ''}
+                            <div class="flex justify-between items-center border-b-2 border-slate-900 pb-4 mb-4 w-full">
+                                <div class="flex items-center gap-4">
+                                    <img src="${settings.schoolLogo}" class="w-20 h-20 object-contain" />
+                                    <div>
+                                        <h1 class="text-2xl font-black uppercase text-slate-900 leading-tight">${settings.schoolName}</h1>
+                                        <p class="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Excellence in Education</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <h1 class="text-lg font-black uppercase text-slate-700">Fee Statement</h1>
+                                    <p class="text-[10px] font-bold text-slate-500 leading-tight max-w-[250px] ml-auto">${settings.schoolAddress}</p>
+                                </div>
+                            </div>
+                            <div class="flex justify-center mb-6">
+                                <div class="bg-slate-900 text-white px-6 py-1.5 rounded text-[10px] font-black uppercase tracking-widest">
+                                    Official Fee Balance Notice ${selectedTerm !== 'ALL' ? `- ${selectedTerm}` : ''}
                                 </div>
                             </div>
 
                             <!-- Student Info -->
-                            <div class="grid grid-cols-2 gap-8 mb-8">
+                            <div class="grid grid-cols-2 gap-8 mb-4">
                                 <div class="space-y-1">
                                     <p class="text-[10px] font-black text-slate-400 uppercase">Attention to Parent/Guardian of:</p>
-                                    <p class="text-lg font-black">${student.name}</p>
+                                    <p class="text-xl font-black text-blue-800">${student.name}</p>
                                     <p class="text-xs font-bold text-slate-600">${student.grade} - ${student.stream || 'No Stream'}</p>
                                     <p class="text-xs font-mono text-slate-500">Adm No: ${student.admissionNo}</p>
                                 </div>
@@ -204,7 +215,14 @@ export const FeeReminder = ({ data }) => {
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-200">
-                                        ${finance.items.map(item => html`
+                                        ${finance.items
+                                            .filter(item => {
+                                                if (selectedTerm === 'ALL') return true;
+                                                const termKey = selectedTerm.toLowerCase();
+                                                // Always show arrears B/F and non-tuition items, or items matching term
+                                                return item.key === 'prev' || !['t1', 't2', 't3'].includes(item.key) || item.key === termKey;
+                                            })
+                                            .map(item => html`
                                             <tr>
                                                 <td class="p-2 font-bold text-xs">${item.label}</td>
                                                 <td class="p-2 text-right font-mono text-xs">${item.due.toLocaleString()}</td>

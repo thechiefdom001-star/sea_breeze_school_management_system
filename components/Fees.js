@@ -27,7 +27,7 @@ export const Fees = ({ data, setData }) => {
         { key: 'uniform', label: 'Uniform' },
         { key: 'studentCard', label: 'ID Card' },
         { key: 'remedial', label: 'Remedials' },
-        { key: 'assessmentFee', label: 'Assessment Fee' },
+        { key: 'assessmentFee', label: 'Exam Fee' },
         { key: 'projectFee', label: 'Project Fee' }
     ];
 
@@ -370,7 +370,7 @@ export const Fees = ({ data, setData }) => {
                                 .slice().reverse().map(p => {
                                 const s = data.students.find(st => st.id === p.studentId);
                                 return html`
-                                    <tr key=${p.id} class="even:bg-slate-50/50 hover:bg-blue-50/50 transition-colors">
+                                    <tr key=${p.id} class="hover:bg-slate-50">
                                         <td class="px-6 py-4 font-mono text-xs">${p.receiptNo}</td>
                                         <td class="px-6 py-4 font-medium text-sm">${s?.name || 'Unknown'}</td>
                                         <td class="px-6 py-4 text-xs text-slate-500">${p.date}</td>

@@ -93,9 +93,31 @@ export const Teachers = ({ data, setData }) => {
                             <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Subjects (Comma separated)</label>
                             <input placeholder="e.g. Maths, Science" required class="w-full p-3 bg-slate-50 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" value=${newTeacher.subjects} onInput=${(e) => setNewTeacher({...newTeacher, subjects: e.target.value})} />
                         </div>
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Classes (Comma separated)</label>
-                            <input placeholder="e.g. Grade 1, Grade 2" required class="w-full p-3 bg-slate-50 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" value=${newTeacher.grades} onInput=${(e) => setNewTeacher({...newTeacher, grades: e.target.value})} />
+                        <div class="space-y-1 md:col-span-2">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Assigned Classes</label>
+                            <div class="flex flex-wrap gap-1 p-2 bg-slate-50 rounded-lg min-h-[44px]">
+                                ${data.settings.grades.map(g => html`
+                                    <label class=${`flex items-center px-2 py-1 rounded text-[10px] font-bold cursor-pointer transition-colors ${
+                                        (newTeacher.grades || '').split(',').map(s => s.trim()).includes(g)
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-white text-slate-400 border border-slate-100'
+                                    }`}>
+                                        <input 
+                                            type="checkbox" 
+                                            class="hidden"
+                                            checked=${(newTeacher.grades || '').split(',').map(s => s.trim()).includes(g)}
+                                            onChange=${(e) => {
+                                                const current = (newTeacher.grades || '').split(',').map(s => s.trim()).filter(s => s);
+                                                const updated = e.target.checked 
+                                                    ? [...current, g]
+                                                    : current.filter(c => c !== g);
+                                                setNewTeacher({...newTeacher, grades: updated.join(', ')});
+                                            }}
+                                        />
+                                        ${g}
+                                    </label>
+                                `)}
+                            </div>
                         </div>
                         <div class="space-y-1">
                             <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Employee No.</label>
@@ -121,8 +143,8 @@ export const Teachers = ({ data, setData }) => {
             `}
 
             <div class="grid grid-cols-1 gap-6">
-                <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                    <table class="w-full text-left">
+                <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-x-auto no-scrollbar">
+                    <table class="w-full text-left min-w-[800px]">
                         <thead class="bg-slate-50 border-b border-slate-100">
                             <tr>
                                 <th class="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase">Name</th>
@@ -135,7 +157,7 @@ export const Teachers = ({ data, setData }) => {
                         </thead>
                         <tbody class="divide-y divide-slate-50">
                             ${teachers.map(t => html`
-                                <tr key=${t.id} class="even:bg-slate-50/50 hover:bg-blue-50/50 transition-colors">
+                                <tr key=${t.id} class="hover:bg-slate-100 transition-colors even:bg-slate-50">
                                     <td class="px-6 py-4">
                                         <div class="font-bold text-sm">${t.name}</div>
                                     </td>

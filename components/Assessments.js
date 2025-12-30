@@ -8,6 +8,8 @@ const html = htm.bind(h);
 export const Assessments = ({ data, setData }) => {
     const [selectedGrade, setSelectedGrade] = useState('GRADE 1');
     const [selectedSubject, setSelectedSubject] = useState('');
+    const [selectedTerm, setSelectedTerm] = useState('T1');
+    const [selectedExamType, setSelectedExamType] = useState('Opener');
 
     const subjects = Storage.getSubjectsForGrade(selectedGrade);
 
@@ -17,11 +19,30 @@ export const Assessments = ({ data, setData }) => {
         }
     }, [selectedGrade]);
     
-    const students = (data?.students || []).filter(s => s.grade === selectedGrade);
+    const students = (data?.students || []).filter(s => {
+        const inGrade = s.grade === selectedGrade;
+        if (!inGrade) return false;
+        
+        // For Senior School, filter students by their chosen electives
+        const seniorGrades = ['GRADE 10', 'GRADE 11', 'GRADE 12'];
+        if (seniorGrades.includes(selectedGrade)) {
+            const core = ['English', 'Kiswahili', 'Mathematics', 'CSL'];
+            if (core.includes(selectedSubject)) return true;
+            return (s.seniorElectives || []).includes(selectedSubject);
+        }
+        return true;
+    });
 
     const updateAssessment = (studentId, field, value) => {
-        const existing = data.assessments.find(a => a.studentId === studentId && a.subject === selectedSubject);
-        const otherAssessments = data.assessments.filter(a => !(a.studentId === studentId && a.subject === selectedSubject));
+        const existing = data.assessments.find(a => 
+            a.studentId === studentId && 
+            a.subject === selectedSubject && 
+            a.term === selectedTerm && 
+            a.examType === selectedExamType
+        );
+        const otherAssessments = data.assessments.filter(a => 
+            !(a.studentId === studentId && a.subject === selectedSubject && a.term === selectedTerm && a.examType === selectedExamType)
+        );
         
         let level = existing?.level || 'ME2';
         let score = existing?.score || 0;
@@ -37,6 +58,8 @@ export const Assessments = ({ data, setData }) => {
             id: existing?.id || (Date.now() + Math.random().toString()),
             studentId,
             subject: selectedSubject,
+            term: selectedTerm,
+            examType: selectedExamType,
             level,
             score,
             date: new Date().toISOString().split('T')[0]
@@ -62,21 +85,51 @@ export const Assessments = ({ data, setData }) => {
                 <p class="text-slate-500">Assess students based on curriculum sub-strands</p>
             </div>
 
-            <div class="flex flex-col md:flex-row gap-4 no-print">
-                <select 
-                    class="p-3 bg-white border border-slate-200 rounded-xl outline-none"
-                    value=${selectedGrade}
-                    onChange=${(e) => setSelectedGrade(e.target.value)}
-                >
-                    ${data.settings.grades.map(g => html`<option value=${g}>${g}</option>`)}
-                </select>
-                <select 
-                    class="p-3 bg-white border border-slate-200 rounded-xl outline-none flex-1"
-                    value=${selectedSubject}
-                    onChange=${(e) => setSelectedSubject(e.target.value)}
-                >
-                    ${subjects.map(s => html`<option value=${s}>${s}</option>`)}
-                </select>
+            <div class="flex flex-col md:flex-row flex-wrap gap-4 no-print">
+                <div class="flex flex-col gap-1">
+                    <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Grade</label>
+                    <select 
+                        class="p-3 bg-white border border-slate-200 rounded-xl outline-none min-w-[120px]"
+                        value=${selectedGrade}
+                        onChange=${(e) => setSelectedGrade(e.target.value)}
+                    >
+                        ${data.settings.grades.map(g => html`<option value=${g}>${g}</option>`)}
+                    </select>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Term</label>
+                    <select 
+                        class="p-3 bg-white border border-slate-200 rounded-xl outline-none min-w-[100px]"
+                        value=${selectedTerm}
+                        onChange=${(e) => setSelectedTerm(e.target.value)}
+                    >
+                        <option value="T1">Term 1</option>
+                        <option value="T2">Term 2</option>
+                        <option value="T3">Term 3</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Exam Cycle</label>
+                    <select 
+                        class="p-3 bg-white border border-slate-200 rounded-xl outline-none min-w-[140px]"
+                        value=${selectedExamType}
+                        onChange=${(e) => setSelectedExamType(e.target.value)}
+                    >
+                        <option value="Opener">Opener (CAT 1)</option>
+                        <option value="Mid-Term">Mid-Term (CAT 2)</option>
+                        <option value="End-Term">End-Term Exam</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-1 flex-1">
+                    <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Subject</label>
+                    <select 
+                        class="p-3 bg-white border border-slate-200 rounded-xl outline-none w-full"
+                        value=${selectedSubject}
+                        onChange=${(e) => setSelectedSubject(e.target.value)}
+                    >
+                        ${subjects.map(s => html`<option value=${s}>${s}</option>`)}
+                    </select>
+                </div>
             </div>
 
             <div class="bg-white rounded-2xl border border-slate-100 shadow-sm">
@@ -85,7 +138,12 @@ export const Assessments = ({ data, setData }) => {
                 ` : html`
                     <div class="divide-y divide-slate-50">
                         ${students.map(student => {
-                            const assessment = data.assessments.find(a => a.studentId === student.id && a.subject === selectedSubject);
+                            const assessment = data.assessments.find(a => 
+                                a.studentId === student.id && 
+                                a.subject === selectedSubject && 
+                                a.term === selectedTerm && 
+                                a.examType === selectedExamType
+                            );
                             return html`
                                 <div key=${student.id} class="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                                     <div>

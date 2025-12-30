@@ -11,6 +11,8 @@ export const Sidebar = ({ currentView, setView }) => {
         { id: 'staff', label: 'Staff', icon: '🛠️' },
         { id: 'marklist', label: 'Marklist', icon: '🏆' },
         { id: 'assessments', label: 'Assessments', icon: '📝' },
+        { id: 'senior-school', label: 'Senior School', icon: '🎓' },
+        { id: 'result-analysis', label: 'Result Analysis', icon: '📈' },
         { id: 'fees', label: 'Finance', icon: '💰' },
         { id: 'fees-register', label: 'Fees Register', icon: '📋' },
         { id: 'fee-reminder', label: 'Fee Reminder', icon: '🔔' },
@@ -38,17 +40,19 @@ export const Sidebar = ({ currentView, setView }) => {
                 </nav>
             </aside>
 
-            <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex overflow-x-auto no-scrollbar p-2 z-50 gap-1 items-center">
+            <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex overflow-x-auto no-scrollbar p-2 pb-safe z-50 gap-2 items-center shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
                 ${menuItems.map(item => html`
                     <button
                         key=${item.id}
                         onClick=${() => setView(item.id)}
-                        class=${`flex flex-col items-center p-2 px-4 rounded-xl transition-all flex-none ${
-                            currentView === item.id ? 'text-primary bg-slate-50' : 'text-slate-400'
+                        class=${`flex flex-col items-center justify-center p-3 px-5 rounded-2xl transition-all flex-none min-w-[70px] ${
+                            currentView === item.id 
+                                ? 'text-white bg-primary shadow-md shadow-blue-200 scale-105' 
+                                : 'text-slate-400 bg-slate-50/50 active:bg-slate-100'
                         }`}
                     >
-                        <span class="text-xl mb-1">${item.icon}</span>
-                        <span class="text-[10px] font-black uppercase tracking-tighter">${item.label.split(' ')[0]}</span>
+                        <span class="text-lg mb-1">${item.icon}</span>
+                        <span class="text-[8px] font-black uppercase tracking-wider">${item.label.split(' ')[0]}</span>
                     </button>
                 `)}
             </nav>
