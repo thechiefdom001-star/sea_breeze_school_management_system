@@ -51,7 +51,7 @@ const App = () => {
 
     const handleLogin = (e) => {
         e.preventDefault();
-        if (loginUsername === 'admin' && loginPassword === 'admin002') {
+        if (loginUsername === 'seabreazeschool' && loginPassword === 'malindi1') {
             setIsAdmin(true);
             localStorage.setItem('et_is_admin', 'true');
             setShowLoginModal(false);
@@ -196,7 +196,7 @@ const App = () => {
                                     value=${loginPassword}
                                     onInput=${e => setLoginPassword(e.target.value)}
                                 />
-                                <p class="text-[8px] text-slate-400 mt-1 italic">Tip: admin / admin002</p>
+                                <p class="text-[8px] text-slate-400 mt-1 italic">Tip: Ask The School Administrator</p>
                             </div>
                             <div class="flex gap-3">
                                 <button type="button" onClick=${() => setShowLoginModal(false)} class="flex-1 py-4 text-slate-500 font-bold">Cancel</button>
