@@ -1,5 +1,6 @@
 import { h } from 'preact';
 import htm from 'htm';
+import { Storage } from '../lib/storage.js';
 
 const html = htm.bind(h);
 
@@ -14,12 +15,8 @@ export const Dashboard = ({ data }) => {
     const totalStaff = (data?.staff || []).length;
     const totalFeesCollected = payments.reduce((sum, p) => sum + Number(p.amount), 0);
     const expectedFees = students.reduce((sum, s) => {
-        const structure = settings.feeStructures?.find(f => f.grade === s.grade);
-        const prev = Number(s.previousArrears) || 0;
-        if (!structure) return sum + prev;
-        const selected = s.selectedFees || ['t1', 't2', 't3'];
-        const studentTotal = selected.reduce((sSum, key) => sSum + (structure[key] || 0), 0);
-        return sum + studentTotal + prev;
+        const fin = Storage.getStudentFinancials(s, data.payments, settings);
+        return sum + fin.totalDue;
     }, 0);
     const totalArrears = expectedFees - totalFeesCollected;
     const feePercentage = expectedFees > 0 ? (totalFeesCollected / expectedFees) * 100 : 0;

@@ -1,6 +1,7 @@
 import { h } from 'preact';
 import { useState, useEffect } from 'preact/hooks';
 import htm from 'htm';
+import { Storage } from '../lib/storage.js';
 
 const html = htm.bind(h);
 
@@ -57,6 +58,7 @@ export const Fees = ({ data, setData }) => {
         const newPayment = {
             id: 'PAY-' + Date.now(),
             studentId: selectedStudentId,
+            gradeAtPayment: student.grade,
             amount: totalAmount,
             items: { ...paymentItems },
             term: selectedTerm,
@@ -64,16 +66,8 @@ export const Fees = ({ data, setData }) => {
             receiptNo: 'RCP-' + Math.floor(Math.random() * 10000).toString().padStart(4, '0')
         };
 
-        const existingPayments = (data.payments || []).filter(p => p.studentId === student.id);
-        const totalPaidSoFar = existingPayments.reduce((sum, p) => sum + Number(p.amount), 0);
-        
-        // Calculate total due based on student's specific fee profile
-        const totalDue = (Number(student.previousArrears) || 0) + feeColumns.reduce((sum, col) => {
-            const isSelected = (student.selectedFees || ['t1', 't2', 't3']).includes(col.key);
-            return sum + (isSelected ? (feeStructure[col.key] || 0) : 0);
-        }, 0);
-        
-        const balanceAfter = totalDue - (totalPaidSoFar + totalAmount);
+        const financials = Storage.getStudentFinancials(student, data.payments, data.settings);
+        const balanceAfter = financials.balance - totalAmount;
 
         const allPaymentsForStudent = [...existingPayments, newPayment];
         

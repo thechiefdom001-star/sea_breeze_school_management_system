@@ -51,7 +51,7 @@ const App = () => {
 
     const handleLogin = (e) => {
         e.preventDefault();
-        if (loginUsername === 'seabreazeschool' && loginPassword === 'malindi1') {
+        if (loginUsername === 'seabreazeschool' && loginPassword === 'starshine') {
             setIsAdmin(true);
             localStorage.setItem('et_is_admin', 'true');
             setShowLoginModal(false);

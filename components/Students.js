@@ -1,6 +1,7 @@
 import { h } from 'preact';
 import { useState } from 'preact/hooks';
 import htm from 'htm';
+import { Storage } from '../lib/storage.js';
 
 const html = htm.bind(h);
 
@@ -21,6 +22,7 @@ export const Students = ({ data, setData, onSelectStudent }) => {
     const [newStudent, setNewStudent] = useState({ 
         name: '', 
         grade: data.settings.grades[0] || 'GRADE 1', 
+        category: 'Normal',
         admissionNo: '',
         assessmentNo: '',
         upiNo: '',
@@ -48,6 +50,7 @@ export const Students = ({ data, setData, onSelectStudent }) => {
         setNewStudent({ 
             name: '', 
             grade: data.settings.grades[0] || 'GRADE 1', 
+            category: 'Normal',
             admissionNo: '',
             assessmentNo: '',
             upiNo: '',
@@ -60,9 +63,40 @@ export const Students = ({ data, setData, onSelectStudent }) => {
     };
 
     const handleEdit = (student) => {
-        setNewStudent(student);
+        setNewStudent({ ...student, category: student.category || 'Normal' });
         setEditingId(student.id);
         setShowAdd(true);
+    };
+
+    const handlePromote = (student) => {
+        const grades = data.settings.grades;
+        const currentIndex = grades.indexOf(student.grade);
+        
+        if (currentIndex === -1 || currentIndex === grades.length - 1) {
+            alert("No further grade to promote to.");
+            return;
+        }
+
+        const nextGrade = grades[currentIndex + 1];
+        if (!confirm(`Promote ${student.name} to ${nextGrade}? Current balance will be carried as arrears.`)) return;
+
+        // Calculate current balance
+        const financials = Storage.getStudentFinancials(student, data.payments, data.settings);
+        
+        const updatedStudents = data.students.map(s => {
+            if (s.id === student.id) {
+                return {
+                    ...s,
+                    grade: nextGrade,
+                    previousArrears: financials.balance,
+                    // We don't reset selectedFees, user might want to edit them
+                };
+            }
+            return s;
+        });
+
+        setData({ ...data, students: updatedStudents });
+        alert(`${student.name} promoted to ${nextGrade}. Arrears: ${data.settings.currency} ${financials.balance.toLocaleString()}`);
     };
 
     const handleDelete = (id) => {
@@ -166,11 +200,23 @@ export const Students = ({ data, setData, onSelectStudent }) => {
                         <div class="space-y-1">
                             <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Grade / Class</label>
                             <select 
-                                class="w-full p-3 bg-slate-50 rounded-lg border-0 focus:ring-2 focus:ring-blue-500 outline-none"
+                                class="w-full p-3 bg-slate-50 rounded-xl border-0 focus:ring-2 focus:ring-blue-500 outline-none"
                                 value=${newStudent.grade}
                                 onChange=${(e) => setNewStudent({...newStudent, grade: e.target.value})}
                             >
                                 ${data.settings.grades.map(g => html`<option value=${g}>${g}</option>`)}
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Student Category</label>
+                            <select 
+                                class="w-full p-3 bg-slate-50 rounded-xl border-0 focus:ring-2 focus:ring-blue-500 outline-none font-bold"
+                                value=${newStudent.category || 'Normal'}
+                                onChange=${(e) => setNewStudent({...newStudent, category: e.target.value})}
+                            >
+                                <option value="Normal">Normal (Full Fees)</option>
+                                <option value="Staff">Staff Child (50% Off)</option>
+                                <option value="Sponsored">Sponsored (100% Off)</option>
                             </select>
                         </div>
                         <div class="space-y-1">
@@ -282,6 +328,13 @@ export const Students = ({ data, setData, onSelectStudent }) => {
                                 </td>
                                 <td class="px-6 py-4 no-print">
                                     <div class="flex items-center gap-3">
+                                        <button 
+                                            onClick=${() => handlePromote(student)}
+                                            class="bg-blue-50 text-blue-600 px-2 py-1 rounded font-black text-[9px] hover:bg-blue-600 hover:text-white transition-all uppercase"
+                                            title="Promote to Next Grade"
+                                        >
+                                            Promote
+                                        </button>
                                         <button 
                                             onClick=${() => onSelectStudent(student.id)}
                                             class="text-blue-600 font-bold text-[10px] hover:underline uppercase tracking-tight"

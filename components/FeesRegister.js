@@ -1,6 +1,7 @@
 import { h } from 'preact';
 import { useState } from 'preact/hooks';
 import htm from 'htm';
+import { Storage } from '../lib/storage.js';
 
 const html = htm.bind(h);
 
@@ -51,7 +52,7 @@ export const FeesRegister = ({ data }) => {
     };
 
     const registerData = students.map(s => {
-        const finance = calculateStudentFees(s);
+        const finance = Storage.getStudentFinancials(s, data.payments, data.settings);
         return { ...s, ...finance };
     });
 
