@@ -69,7 +69,8 @@ export const Fees = ({ data, setData }) => {
         const financials = Storage.getStudentFinancials(student, data.payments, data.settings);
         const balanceAfter = financials.balance - totalAmount;
 
-        const allPaymentsForStudent = [...existingPayments, newPayment];
+        const studentPayments = (data.payments || []).filter(p => p.studentId === selectedStudentId);
+        const allPaymentsForStudent = [...studentPayments, newPayment];
         
         setData({ ...data, payments: [...(data.payments || []), newPayment] });
         setReceipt({ 
@@ -308,9 +309,19 @@ export const Fees = ({ data, setData }) => {
                             </div>
 
                             <div class="pt-8 text-center hidden print:block">
-                                <div class="flex justify-around mb-8">
-                                    <div class="text-center border-t border-black w-32 pt-1 text-[8px] font-bold uppercase">Accounts Clerk</div>
-                                    <div class="text-center border-t border-black w-32 pt-1 text-[8px] font-bold uppercase">School Stamp</div>
+                                <div class="flex justify-around mb-8 items-end h-16">
+                                    <div class="text-center w-32">
+                                        <div class="h-10 flex items-center justify-center mb-1">
+                                            ${data.settings.clerkSignature && html`<img src="${data.settings.clerkSignature}" class="h-full object-contain" />`}
+                                        </div>
+                                        <div class="border-t border-black pt-1 text-[8px] font-bold uppercase">Accounts Clerk</div>
+                                    </div>
+                                    <div class="text-center w-32">
+                                        <div class="h-10 flex items-center justify-center mb-1">
+                                            <img src="${data.settings.schoolLogo}" class="h-full object-contain opacity-20 grayscale" />
+                                        </div>
+                                        <div class="border-t border-black pt-1 text-[8px] font-bold uppercase">School Stamp</div>
+                                    </div>
                                 </div>
                                 <p class="text-[10px] italic">Thank you for your payment.</p>
                             </div>

@@ -135,16 +135,15 @@ export const FeeReminder = ({ data }) => {
                 <style>
                     @media print {
                         .reminder-card {
-                            height: 14.8cm;
+                            min-height: 14.5cm;
                             width: 100% !important;
                             padding: 1.5cm !important;
-                            border-bottom: 1px dashed #000 !important;
+                            border-bottom: 2px dashed #ccc !important;
                             page-break-inside: avoid;
                             display: flex;
                             flex-direction: column;
                             justify-content: flex-start;
                             box-sizing: border-box;
-                            overflow: hidden;
                         }
                         .reminder-card:nth-child(2n) {
                             border-bottom: none !important;
@@ -255,7 +254,10 @@ export const FeeReminder = ({ data }) => {
                                 
                                 <div class="flex justify-between items-end pt-4 print:pt-2">
                                     <div class="text-center w-48">
-                                        <div class="h-8 border-b border-slate-900 mb-1"></div>
+                                        <div class="h-10 flex items-center justify-center mb-1">
+                                            ${settings.clerkSignature && html`<img src="${settings.clerkSignature}" class="h-full object-contain" />`}
+                                        </div>
+                                        <div class="h-0.5 bg-slate-900 mb-1 w-full"></div>
                                         <p class="text-[9px] font-black uppercase text-slate-500">Accounts Dept</p>
                                     </div>
                                     <div class="text-center w-48 flex flex-col items-center">

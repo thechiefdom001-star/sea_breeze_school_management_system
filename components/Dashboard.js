@@ -21,6 +21,15 @@ export const Dashboard = ({ data }) => {
     const totalArrears = expectedFees - totalFeesCollected;
     const feePercentage = expectedFees > 0 ? (totalFeesCollected / expectedFees) * 100 : 0;
 
+    const feesPerGrade = (settings.grades || []).map(grade => {
+        const gradeStudentIds = students.filter(s => s.grade === grade).map(s => s.id);
+        const total = payments
+            .filter(p => gradeStudentIds.includes(p.studentId))
+            .reduce((sum, p) => sum + Number(p.amount), 0);
+        return { grade, total };
+    });
+    const maxGradeFee = Math.max(...feesPerGrade.map(f => f.total), 1);
+
     return html`
         <div class="space-y-8 animate-in fade-in duration-500">
             <div class="no-print">
@@ -85,6 +94,32 @@ export const Dashboard = ({ data }) => {
                         })}
                     </div>
                     ${totalStudents === 0 && html`<p class="text-center text-slate-300 py-12 text-sm">No enrollment data</p>`}
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2">
+                    <h3 class="font-bold mb-6 flex items-center gap-2">
+                        <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                        Fee Collection per Grade (${settings.currency})
+                    </h3>
+                    <div class="flex items-end justify-between h-48 gap-2 px-2">
+                        ${feesPerGrade.map((item, index) => {
+                            const heightPct = (item.total / maxGradeFee) * 100;
+                            const colors = ['bg-emerald-400', 'bg-teal-400', 'bg-cyan-400', 'bg-sky-400', 'bg-blue-400', 'bg-indigo-400', 'bg-violet-400', 'bg-purple-400'];
+                            const color = colors[index % colors.length];
+                            
+                            return html`
+                                <div class="flex-1 flex flex-col items-center group relative h-full justify-end">
+                                    <div class=${`w-full ${color} rounded-t-md opacity-80 hover:opacity-100 transition-all cursor-pointer relative`} style=${{ height: `${heightPct}%` }}>
+                                        <div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[9px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-20">
+                                            ${settings.currency} ${item.total.toLocaleString()}
+                                        </div>
+                                    </div>
+                                    <span class="text-[8px] font-bold text-slate-400 mt-2 uppercase rotate-45 origin-left whitespace-nowrap">${item.grade}</span>
+                                </div>
+                            `;
+                        })}
+                    </div>
+                    ${totalFeesCollected === 0 && html`<p class="text-center text-slate-300 py-12 text-sm">No fee collection data yet</p>`}
                 </div>
             </div>
         </div>

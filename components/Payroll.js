@@ -319,23 +319,27 @@ export const Payroll = ({ data, setData }) => {
                                 </div>
 
                                 <!-- Net Pay Row -->
-                                <div class="col-span-full p-3 bg-blue-600 flex flex-col print:bg-slate-50 border-t border-slate-200">
+                                <div class="col-span-full p-3 bg-blue-600 flex flex-col print:bg-slate-100 border-t border-slate-200">
                                     <div class="flex justify-between items-center">
-                                        <span class="font-black text-white uppercase text-[10px] print:text-black tracking-widest">Net Pay (Take Home)</span>
-                                        <span class="text-xl font-black text-white print:text-black">${data.settings.currency} ${activePayslip.entry.netPay.toLocaleString()}</span>
+                                        <span class="font-black text-white uppercase text-[10px] print:text-slate-900 tracking-widest">Net Pay (Take Home)</span>
+                                        <span class="text-xl font-black text-white print:text-slate-900">${data.settings.currency} ${activePayslip.entry.netPay.toLocaleString()}</span>
                                     </div>
-                                    <div class="mt-1 border-t border-white/20 pt-1 print:border-black/10">
+                                    <div class="mt-1 border-t border-white/20 pt-1 print:border-slate-900/10">
                                         <p class="text-[8px] font-bold text-blue-100 print:text-slate-500 uppercase">Amount in Words:</p>
-                                        <p class="text-[10px] font-medium text-white print:text-black italic">${Storage.numberToWords(activePayslip.entry.netPay)}</p>
+                                        <p class="text-[10px] font-medium text-white print:text-slate-900 italic">${Storage.numberToWords(activePayslip.entry.netPay)}</p>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="flex justify-between items-end pt-8">
+                            <div class="flex justify-between items-end pt-8 h-20">
                                 <div class="text-center w-40 border-t border-slate-200 print:border-black pt-2">
                                     <p class="text-[8px] font-bold uppercase text-slate-400 print:text-black">Employee Signature</p>
                                 </div>
-                                <div class="text-center w-40 border-t border-slate-200 print:border-black pt-2">
+                                <div class="text-center w-40 pt-2">
+                                    <div class="h-12 flex items-center justify-center mb-1">
+                                        ${data.settings.principalSignature && html`<img src="${data.settings.principalSignature}" class="h-full object-contain" />`}
+                                    </div>
+                                    <div class="border-t border-slate-200 print:border-black w-full"></div>
                                     <p class="text-[8px] font-bold uppercase text-slate-400 print:text-black">Director / Principal</p>
                                 </div>
                             </div>

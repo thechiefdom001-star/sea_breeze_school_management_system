@@ -25,8 +25,6 @@ const App = () => {
     const [view, setView] = useState('dashboard');
     const [data, setData] = useState(Storage.load());
     const [selectedStudent, setSelectedStudent] = useState(null);
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(localStorage.getItem('et_sidebar_collapsed') === 'true');
-    const [isMobileMenuHidden, setIsMobileMenuHidden] = useState(false);
     const [isAdmin, setIsAdmin] = useState(localStorage.getItem('et_is_admin') === 'true');
     const [loginUsername, setLoginUsername] = useState('');
     const [loginPassword, setLoginPassword] = useState('');
@@ -35,10 +33,6 @@ const App = () => {
     useEffect(() => {
         Storage.save(data);
     }, [data]);
-
-    useEffect(() => {
-        localStorage.setItem('et_sidebar_collapsed', isSidebarCollapsed);
-    }, [isSidebarCollapsed]);
 
     useEffect(() => {
         // Apply dynamic theme colors
@@ -57,7 +51,7 @@ const App = () => {
 
     const handleLogin = (e) => {
         e.preventDefault();
-        if (loginUsername === 'seabreazeschool' && loginPassword === 'starshine') {
+        if (loginUsername === 'admin' && loginPassword === 'admin002') {
             setIsAdmin(true);
             localStorage.setItem('et_is_admin', 'true');
             setShowLoginModal(false);
@@ -141,19 +135,6 @@ const App = () => {
             <!-- Navbar -->
             <header class="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-4 md:px-8 z-40 no-print">
                 <div class="flex items-center gap-3">
-                    <button 
-                        onClick=${() => {
-                            if (window.innerWidth >= 768) {
-                                setIsSidebarCollapsed(!isSidebarCollapsed);
-                            } else {
-                                setIsMobileMenuHidden(!isMobileMenuHidden);
-                            }
-                        }}
-                        class="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-500"
-                        title="Toggle Menu"
-                    >
-                        <span class="text-xl">≡</span>
-                    </button>
                     <img src="${data.settings.schoolLogo}" class="w-8 h-8 object-contain" />
                     <span class="font-black tracking-tight text-lg hidden sm:block">${data.settings.schoolName}</span>
                 </div>
@@ -173,14 +154,8 @@ const App = () => {
             </header>
 
             <div class="flex flex-1 overflow-hidden">
-                <${Sidebar} 
-                    currentView=${view} 
-                    setView=${setView} 
-                    isCollapsed=${isSidebarCollapsed}
-                    isMobileHidden=${isMobileMenuHidden}
-                    className="no-print" 
-                />
-                <main class="flex-1 overflow-y-auto no-scrollbar pb-20 md:pb-0 relative">
+                <${Sidebar} currentView=${view} setView=${setView} className="no-print" />
+                <main class="flex-1 overflow-y-auto no-scrollbar pb-20 md:pb-0">
                     <div class="max-w-6xl mx-auto p-4 md:p-8">
                         ${!isAdmin && ['settings', 'fees', 'fees-register', 'teachers', 'staff', 'payroll'].includes(view) ? html`
                             <div class="flex flex-col items-center justify-center h-96 text-center space-y-4">
@@ -221,7 +196,7 @@ const App = () => {
                                     value=${loginPassword}
                                     onInput=${e => setLoginPassword(e.target.value)}
                                 />
-                                <p class="text-[8px] text-slate-400 mt-1 italic">Tip: Ask The School Administrator</p>
+                                <p class="text-[8px] text-slate-400 mt-1 italic">Tip: admin / admin002</p>
                             </div>
                             <div class="flex gap-3">
                                 <button type="button" onClick=${() => setShowLoginModal(false)} class="flex-1 py-4 text-slate-500 font-bold">Cancel</button>
@@ -459,7 +434,7 @@ const StudentDetail = ({ student, data, setData, onBack }) => {
                                 <div class="hidden print:flex justify-between items-end mt-4">
                                     <div class="text-center w-48">
                                         <div class="h-8 mb-1 flex items-end justify-center">
-                                            <img src="${settings.schoolLogo}" class="h-full opacity-10 grayscale" />
+                                            <img src="${settings.principalSignature || settings.schoolLogo}" class="h-full ${settings.principalSignature ? '' : 'opacity-10 grayscale'}" />
                                         </div>
                                         <div class="border-t border-black pt-1 text-[9px] font-bold uppercase">Class Teacher's Signature</div>
                                     </div>
@@ -483,7 +458,7 @@ const StudentDetail = ({ student, data, setData, onBack }) => {
                                 <div class="hidden print:flex justify-between items-end mt-4">
                                     <div class="text-center w-48">
                                         <div class="h-8 mb-1 flex items-end justify-center">
-                                            <img src="${settings.schoolLogo}" class="h-full opacity-20 grayscale" />
+                                            <img src="${settings.principalSignature || settings.schoolLogo}" class="h-full ${settings.principalSignature ? '' : 'opacity-20 grayscale'}" />
                                         </div>
                                         <div class="border-t border-black pt-1 text-[9px] font-bold uppercase">Principal's Signature & Stamp</div>
                                     </div>

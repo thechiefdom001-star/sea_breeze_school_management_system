@@ -32,7 +32,7 @@ export const Settings = ({ data, setData }) => {
         setTimeout(() => setUpdating(false), 1500);
     };
 
-    const handleLogoUpload = async (e) => {
+    const handleImageUpload = async (e, field) => {
         const file = e.target.files[0];
         if (!file) return;
         
@@ -40,11 +40,11 @@ export const Settings = ({ data, setData }) => {
             const url = await window.websim.upload(file);
             setData({
                 ...data, 
-                settings: { ...data.settings, schoolLogo: url }
+                settings: { ...data.settings, [field]: url }
             });
         } catch (error) {
-            console.error('Logo upload failed:', error);
-            alert('Failed to upload logo. Please try again.');
+            console.error('Upload failed:', error);
+            alert('Failed to upload image. Please try again.');
         }
     };
 
@@ -335,11 +335,11 @@ export const Settings = ({ data, setData }) => {
                                 <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                     <span class="text-[10px] text-white font-bold text-center">Upload Logo</span>
                                 </div>
-                                <input type="file" accept="image/*" class="hidden" onChange=${handleLogoUpload} />
+                                <input type="file" accept="image/*" class="hidden" onChange=${(e) => handleImageUpload(e, 'schoolLogo')} />
                             </label>
                             <div class="flex-1 space-y-4 w-full">
                                 <div class="space-y-1">
-                                    <label class="text-xs font-bold text-slate-500 uppercase">Logo Source</label>
+                                    <label class="text-xs font-bold text-slate-500 uppercase">Logo Source URL</label>
                                     <div class="flex gap-2">
                                         <input 
                                             class="flex-1 p-3 bg-slate-50 rounded-xl outline-none border border-slate-100 focus:border-blue-400 text-xs"
@@ -349,6 +349,45 @@ export const Settings = ({ data, setData }) => {
                                         />
                                     </div>
                                     <p class="text-[10px] text-slate-400">Recommended: Transparent PNG, square aspect ratio.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border-b pb-6">
+                            <div class="space-y-3">
+                                <label class="text-xs font-bold text-slate-500 uppercase block">Principal's Signature</label>
+                                <div class="flex items-center gap-4">
+                                    <label class="w-24 h-12 bg-slate-50 rounded-xl border border-dashed border-slate-200 flex items-center justify-center overflow-hidden cursor-pointer group shrink-0">
+                                        <img src="${data.settings.principalSignature}" class="w-full h-full object-contain" />
+                                        <div class="absolute w-24 h-12 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <span class="text-[8px] text-white font-bold">Upload</span>
+                                        </div>
+                                        <input type="file" accept="image/*" class="hidden" onChange=${(e) => handleImageUpload(e, 'principalSignature')} />
+                                    </label>
+                                    <input 
+                                        class="flex-1 p-3 bg-slate-50 rounded-xl outline-none border border-slate-100 text-[10px]"
+                                        value=${data.settings.principalSignature}
+                                        onInput=${(e) => setData({...data, settings: {...data.settings, principalSignature: e.target.value}})}
+                                        placeholder="Signature Image URL"
+                                    />
+                                </div>
+                            </div>
+                            <div class="space-y-3">
+                                <label class="text-xs font-bold text-slate-500 uppercase block">Accounts Clerk's Signature</label>
+                                <div class="flex items-center gap-4">
+                                    <label class="w-24 h-12 bg-slate-50 rounded-xl border border-dashed border-slate-200 flex items-center justify-center overflow-hidden cursor-pointer group shrink-0">
+                                        <img src="${data.settings.clerkSignature}" class="w-full h-full object-contain" />
+                                        <div class="absolute w-24 h-12 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <span class="text-[8px] text-white font-bold">Upload</span>
+                                        </div>
+                                        <input type="file" accept="image/*" class="hidden" onChange=${(e) => handleImageUpload(e, 'clerkSignature')} />
+                                    </label>
+                                    <input 
+                                        class="flex-1 p-3 bg-slate-50 rounded-xl outline-none border border-slate-100 text-[10px]"
+                                        value=${data.settings.clerkSignature}
+                                        onInput=${(e) => setData({...data, settings: {...data.settings, clerkSignature: e.target.value}})}
+                                        placeholder="Signature Image URL"
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -373,11 +412,15 @@ export const Settings = ({ data, setData }) => {
                         </div>
                         <div class="space-y-1">
                             <label class="text-xs font-bold text-slate-500 uppercase">Academic Year</label>
-                            <input 
-                                class="w-full p-3 bg-slate-50 rounded-xl outline-none"
-                                value="2024/2025"
-                                disabled
-                            />
+                            <select 
+                                class="w-full p-3 bg-slate-50 rounded-xl outline-none border border-slate-100 focus:border-blue-400 font-bold"
+                                value=${data.settings.academicYear || '2024/2025'}
+                                onChange=${(e) => setData({...data, settings: {...data.settings, academicYear: e.target.value}})}
+                            >
+                                ${Array.from({ length: 27 }, (_, i) => 2024 + i).map(year => html`
+                                    <option value="${year}/${year + 1}">${year}/${year + 1}</option>
+                                `)}
+                            </select>
                         </div>
                         <button 
                             onClick=${handleUpdateProfile}
